@@ -1,5 +1,8 @@
 // controllers/habitController.js
 const { Habit, HabitLog } = require('../models');
+// Jadi ini:
+const { v4: uuidv4 } = require('uuid');
+
 
 /**
  * GET /api/habits
@@ -21,12 +24,15 @@ exports.getHabits = async (req, res, next) => {
  * Create a new habit for the signed‑in user.
  */
 exports.createHabit = async (req, res, next) => {
+  console.log(req.body);
+  const id = uuidv4();
   try {
     const { userId, title, description, periodType, targetValue, colorHex } = req.body;
 
     const habit = await Habit.create({
       // userId: req.user.id,
-       userId,
+      id: id,
+      userId,
       title,
       description,
       periodType,
@@ -34,8 +40,32 @@ exports.createHabit = async (req, res, next) => {
       colorHex,
     });
 
-    res.status(201).json(habit);
-  } catch (e) { next(e); }
+    res.status(201).json(
+      {
+        status : "Success",
+        message: "Data Successfully Added",
+        data: habit
+      }
+    );
+  } catch (e) { 
+   // Handle Sequelize validation errors
+   console.error(e);
+   if (e.name === 'SequelizeValidationError') {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Validation failed',
+      errors: e.errors.map(err => err.message)
+    });
+  }
+
+  res.status(500).json({
+    status: 'error',
+    message: 'Failed to create habit',
+    error: e.message,
+  });
+   
+    // next(e);
+   }
 };
 
 /**
@@ -43,6 +73,8 @@ exports.createHabit = async (req, res, next) => {
  * Update a habit (only owner can do this).
  */
 exports.updateHabit = async (req, res, next) => {
+
+  console.log('body', req.body);
   try {
     // const habit = await Habit.findOne({
     //   where: { id: req.params.id, userId: req.user.id },
@@ -65,9 +97,15 @@ exports.updateHabit = async (req, res, next) => {
     console.log(fields);
     fields.forEach(f => { if (req.body[f] !== undefined) habit[f] = req.body[f]; });
 
-   const update =  await habit.save();
-   console.log(update);
-    res.json(habit);
+    const update = await habit.save();
+    console.log(update);
+    res.status(200).json(
+      {
+        status : "Success",
+        message: "Data Successfully Updated",
+        data: habit
+      }
+    );
   } catch (e) { next(e); }
 };
 
@@ -81,11 +119,15 @@ exports.deleteHabit = async (req, res, next) => {
     //   where: { id: req.params.id, userId: req.user.id },
     // });
 
-     const rows = await Habit.destroy({
+    const rows = await Habit.destroy({
       where: { id: req.params.id },
     });
     if (!rows) return res.status(404).json({ message: 'Habit not found' });
 
-    res.json({ message: 'Habit deleted' });
+    res.json( {
+      status : "Success",
+      message: "Data Successfully Deleted",
+      data: rows
+    });
   } catch (e) { next(e); }
 };

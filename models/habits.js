@@ -6,37 +6,73 @@
 module.exports = (sequelize, DataTypes) => {
   const Habit = sequelize.define('Habit', {
     id: {
-      type: DataTypes.BIGINT.UNSIGNED,
+      type: DataTypes.STRING,
       primaryKey: true,
-      autoIncrement: true,
+      allowNull: false,
+      validate: {
+        notEmpty: { msg: 'ID is required' },
+      },
     },
 
-    /* FK → users.id  */
     userId: {
       type: DataTypes.BIGINT.UNSIGNED,
       allowNull: false,
+      validate: {
+        notNull: { msg: 'User ID is required' },
+        isInt: { msg: 'User ID must be a number' },
+      },
     },
 
     title: {
       type: DataTypes.STRING(120),
       allowNull: false,
+      validate: {
+        notEmpty: { msg: 'Title is required' },
+      },
     },
 
-    description: DataTypes.TEXT,
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
 
     periodType: {
       type: DataTypes.ENUM('daily', 'weekly', 'monthly'),
       allowNull: false,
       defaultValue: 'daily',
+      validate: {
+        notEmpty: { msg: 'Period type is required' },
+        isIn: {
+          args: [['daily', 'weekly', 'monthly']],
+          msg: 'Period type must be one of daily, weekly, or monthly',
+        },
+      },
     },
 
     targetValue: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       defaultValue: 1,
+      validate: {
+        isInt: { msg: 'Target value must be a positive number' },
+        min: {
+          args: [1],
+          msg: 'Target value must be at least 1',
+        },
+      },
     },
 
-    colorHex: DataTypes.CHAR(7),        // #A1B2C3
+    colorHex: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: { msg: 'Color is required' },
+        is: {
+          args: /^#([0-9A-F]{3}){1,2}$/i,
+          msg: 'Invalid HEX color',
+        },
+      },
+    },
 
     archived: {
       type: DataTypes.BOOLEAN,
@@ -48,7 +84,6 @@ module.exports = (sequelize, DataTypes) => {
     timestamps: true,
   });
 
-  /* ---------- RELASI ---------- */
   Habit.associate = models => {
     Habit.belongsTo(models.User, {
       foreignKey: 'userId',

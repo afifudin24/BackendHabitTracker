@@ -5,16 +5,28 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const cors = require('cors');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var userRouter = require('./routes/users');
 var habitsRouter = require('./routes/habits');
 
+
 sequelize.authenticate()
   .then(() => console.log('✅  MySQL connected'))
   .catch(err => { console.error(err); process.exit(1); });
 var app = express();
+
+// Konfigurasi CORS
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'], // atau '*' untuk semua header
+  credentials: true // jika kamu kirim cookie atau header otentikasi
+};
+
+app.use(cors(corsOptions));
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
