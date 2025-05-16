@@ -127,7 +127,8 @@ exports.deleteHabit = async (req, res, next) => {
     res.json( {
       status : "Success",
       message: "Data Successfully Deleted",
-      data: rows
+
+      data: req.params.id
     });
   } catch (e) { next(e); }
 };
