@@ -6,8 +6,8 @@
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
     id: {
-      type: DataTypes.BIGINT.UNSIGNED,
-      autoIncrement: true,
+      type: DataTypes.STRING(150),
+
       primaryKey: true,
     },
     name: {
@@ -27,6 +27,11 @@ module.exports = (sequelize, DataTypes) => {
     passwordHash: {
       type: DataTypes.CHAR(60),
       allowNull: false,
+    },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
   }, {
     tableName: 'users',              // nama tabel MySQL

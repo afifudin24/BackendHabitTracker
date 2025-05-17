@@ -6,5 +6,6 @@ const router = express.Router();
 
 router.post('/login', ac.login);
 router.post('/register', ac.register);
+router.post('/verify-email', ac.verifyEmail);
 
 module.exports = router;

@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const { User } = require("../models");
 const { v4: uuidv4 } = require('uuid');
 const secret_key = process.env.SECRET_KEY;
+const nodemailer = require('nodemailer');
 
 // Register
 exports.register = async (req, res) => {
@@ -15,9 +16,46 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log(hashedPassword);
-    const user = await User.create({ email, passwordString : password, passwordHash: hashedPassword, name });
+    const user = await User.create({  id, email, passwordString : password, passwordHash: hashedPassword, name, isVerified: false });
+    const token = jwt.sign({ email }, secret_key, { expiresIn: '1d' });
 
-    res.status(201).json({ message: 'User registered', user: { id: user.id, email: user.email } });
+  // buat transport email
+ const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+  const verificationUrl = `http://localhost:3000/verify?token=${token}`; // Next.js page
+
+  await transporter.sendMail({
+    to: email,
+    subject: 'Email Verification',
+    html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+      <h2 style="color: #333;">Welcome to Habit Tracker!</h2>
+      <p style="font-size: 16px; color: #555;">
+        Thank you for registering. Please verify your email address to activate your account.
+      </p>
+      <p style="text-align: center; margin: 30px 0;">
+        <a href="${verificationUrl}" 
+          style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+          Verify Email
+        </a>
+      </p>
+      <p style="font-size: 14px; color: #999;">
+        If you didn’t create an account, you can safely ignore this email.
+      </p>
+    </div>
+  `,
+  });
+
+  res.json({ message: 'Verification email sent' });
+    // res.status(201).json({ message: 'User registered', user: { id: user.id, email: user.email } });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -41,3 +79,20 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
+
+
+exports.verifyEmail = async (req, res) => {
+  try {
+    // console.log(req.body);
+    const { token } = req.body;
+    const decoded = jwt.verify(token, secret_key);
+    const user = await User.findOne({ where: { email: decoded.email } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.isVerified) return res.status(400).json({ message: 'Email already verified' });
+    user.isVerified = true;
+    await user.save();
+    res.json({ message: 'Email verified' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}

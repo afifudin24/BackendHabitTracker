@@ -9,10 +9,11 @@ const { v4: uuidv4 } = require('uuid');
  * List all habits that belong to the signed‑in user.
  */
 exports.getHabits = async (req, res, next) => {
+  console.log(req.user);
   try {
     const habits = await Habit.findAll({
-      // where: { userId: req.user.id },
-      // include: [{ model: HabitLog, as: 'logs' }],
+      where: { userId: req.user.id },
+      include: [{ model: HabitLog, as: 'logs' }],
       order: [['createdAt', 'ASC']],
     });
     res.json(habits);
@@ -27,12 +28,12 @@ exports.createHabit = async (req, res, next) => {
   console.log(req.body);
   const id = uuidv4();
   try {
-    const { userId, title, description, periodType, targetValue, colorHex } = req.body;
+    const {title, description, periodType, targetValue, colorHex } = req.body;
 
     const habit = await Habit.create({
-      // userId: req.user.id,
+      userId: req.user.id,
       id: id,
-      userId,
+      // userId,
       title,
       description,
       periodType,

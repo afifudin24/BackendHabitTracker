@@ -15,12 +15,9 @@ module.exports = (sequelize, DataTypes) => {
     },
 
     userId: {
-      type: DataTypes.BIGINT.UNSIGNED,
+      type: DataTypes.STRING,
       allowNull: false,
-      validate: {
-        notNull: { msg: 'User ID is required' },
-        isInt: { msg: 'User ID must be a number' },
-      },
+     
     },
 
     title: {

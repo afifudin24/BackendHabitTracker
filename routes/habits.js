@@ -8,15 +8,15 @@ const router = express.Router();
 // router.use(auth);                                     // all need token
 
 router.route('/')
-  .get(hc.getHabits)
-  .post(hc.createHabit);
+  .get(auth, hc.getHabits)
+  .post(auth, hc.createHabit);
 
 router.route('/:id')
   .put(hc.updateHabit)
   .delete(hc.deleteHabit);
 
 router.post('/:id/logs', hlc.addLogToday);
-router.get('/:id/logs',  hlc.getLogs);
+router.get('/:id/logs', auth,  hlc.getLogs);
 router.delete('/:habitId/logs/:logId', hlc.deleteLog);
 
 module.exports = router;
