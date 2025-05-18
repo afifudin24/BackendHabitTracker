@@ -67,6 +67,8 @@ exports.login = async (req, res) => {
   try {
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(404).json({ message: 'User not found' });
+    // jika user status == 0 maka tidak bisa login
+    if (!user.isVerified) return res.status(401).json({ errors:[ 'Email not verified'], status : "error"});
     console.log(user.passwordHash);
     console.log(password);
     const valid = await bcrypt.compare(password, user.passwordHash);
