@@ -5,10 +5,7 @@ const { User } = require('../models'); // Mengimpor model User
 const getMe = async (req, res) => {
   try {
     const user = await User.findOne({ where: { id: req.user.id } });
-    return res.status(200).json({
-      req: req.user,
-      data: user,
-    });
+    return res.status(200).json(user);
   } catch (error) {
     console.error(error);
     return res
@@ -72,9 +69,9 @@ const getUserById = async (req, res) => {
 // Mengupdate data User
 const updateUser = async (req, res) => {
   try {
-    const userId = req.params.id;
-    const { name, email, passwordString, passwordHash } = req.body;
-
+    const userId = req.user.id;
+    const { name, email } = req.body;
+   
     const user = await User.findOne({ where: { id: userId } });
 
     if (!user) {
@@ -83,12 +80,21 @@ const updateUser = async (req, res) => {
 
     user.name = name || user.name;
     user.email = email || user.email;
-    user.passwordString = passwordString || user.passwordString;
-    user.passwordHash = passwordHash || user.passwordHash;
-
+    if(req.file){
+      user.profile = req.file.filename
+    }
+    const userdata = {
+      name: user.name,
+      email: user.email,
+      profile: user.profile
+    }
     await user.save();
 
-    return res.status(200).json(user);
+    return res.status(200).json({
+      message: 'User updated successfully',
+      data: userdata,
+      status: 'success',
+    });
   } catch (error) {
     console.error(error);
     return res

@@ -44,6 +44,7 @@ app.use('/users', usersRouter);
 app.use('/api/users', userRouter);
 app.use('/api/habits', habitsRouter);
 app.use('/api', authRouter);
+app.use("/uploads", express.static("uploads"));
 
 // static routes
 app.use('/storage/imageprofile', express.static(path.join(__dirname, 'uploads/imageprofile')));
