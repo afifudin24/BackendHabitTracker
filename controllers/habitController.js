@@ -3,6 +3,17 @@ const { Habit, HabitLog } = require('../models');
 const Sequelize = require('sequelize');
 // Jadi ini:
 const { v4: uuidv4 } = require('uuid');
+const { Op } = require('sequelize');
+const dayjs = require('dayjs');
+const isSameOrAfter = require('dayjs/plugin/isSameOrAfter');
+const isSameOrBefore = require('dayjs/plugin/isSameOrBefore');
+const isoWeek = require('dayjs/plugin/isoWeek');
+const isBetween = require('dayjs/plugin/isBetween');
+
+dayjs.extend(isBetween);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isoWeek); // agar s
 
 /**
  * GET /api/habits
@@ -33,22 +44,65 @@ exports.getHabitIncomplete = async (req, res, next) => {
     include: [
       {
         model: HabitLog,
-        as: 'logs', // pastikan alias sesuai
+        as: 'logs',
       },
     ],
   });
 
+  const today = dayjs().startOf('day');
+  const startOfWeek = today.startOf('isoWeek');
+  const endOfWeek = today.endOf('isoWeek');
+  const startOfMonth = today.startOf('month');
+  const endOfMonth = today.endOf('month');
+
   const incompleteHabits = habits.filter((habit) => {
     const logs = habit.logs || [];
 
-    // Hitung yang value === 1 (berarti sudah di-check)
-    const checkedCount = logs.filter((log) => log.value === 1).length;
+    const today = dayjs().startOf('day');
+    const startOfWeek = today.startOf('isoWeek');
+    const endOfWeek = today.endOf('isoWeek');
+    const startOfMonth = today.startOf('month');
+    const endOfMonth = today.endOf('month');
 
-    // Kondisi incomplete:
-    // 1. Tidak ada log sama sekali
-    // 2. atau belum mencapai target checked
-    return checkedCount < habit.targetValue;
+    let relevantLogs = [];
+
+    if (habit.periodType === 'daily') {
+      // Ambil log hari ini
+      relevantLogs = logs.filter((log) => dayjs(log.date).isSame(today, 'day'));
+      // Daily selalu tampilkan (user bisa check ulang hari ini)
+      return true;
+    } else if (habit.periodType === 'weekly') {
+      // Ambil log minggu ini
+      relevantLogs = logs.filter((log) =>
+        dayjs(log.date).isBetween(startOfWeek, endOfWeek, null, '[]'),
+      );
+
+      // Cek log value=1 yang bukan di hari ini
+      const hasCheckedOtherDayThisWeek = relevantLogs.some(
+        (log) => log.value === 1 && !dayjs(log.date).isSame(today, 'day'),
+      );
+
+      // Kalau sudah ada log value=1 di minggu ini di hari selain hari ini, jangan tampilkan
+      return !hasCheckedOtherDayThisWeek;
+    } else if (habit.periodType === 'monthly') {
+      // Ambil log bulan ini
+      relevantLogs = logs.filter((log) =>
+        dayjs(log.date).isBetween(startOfMonth, endOfMonth, null, '[]'),
+      );
+
+      // Cek log value=1 yang bukan di hari ini
+      const hasCheckedOtherDayThisMonth = relevantLogs.some(
+        (log) => log.value === 1 && !dayjs(log.date).isSame(today, 'day'),
+      );
+
+      // Kalau sudah ada log value=1 di bulan ini di hari selain hari ini, jangan tampilkan
+      return !hasCheckedOtherDayThisMonth;
+    }
+
+    // Default tampilkan
+    return true;
   });
+
   res.json(incompleteHabits);
 };
 
